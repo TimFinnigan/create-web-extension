@@ -138,7 +138,7 @@ async function createManifestFile(projectPath, options) {
  * Creates source files for the extension
  */
 async function createSourceFiles(projectPath, options) {
-  const { typescript, react } = options;
+  const { typescript, react, manifestVersion } = options;
   const extension = typescript ? 'ts' : 'js';
   const jsxExtension = typescript ? 'tsx' : 'jsx';
   
