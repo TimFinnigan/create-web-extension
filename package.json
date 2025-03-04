@@ -1,0 +1,42 @@
+{
+  "name": "create-web-extension",
+  "version": "1.0.0",
+  "main": "index.js",
+  "bin": {
+    "create-web-extension": "./bin/create-web-extension.js"
+  },
+  "scripts": {
+    "start": "node ./bin/create-web-extension.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src/**/*.js",
+    "prepare": "chmod +x ./bin/create-web-extension.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TimFinnigan/create-web-extension.git"
+  },
+  "keywords": [
+    "chrome",
+    "extension",
+    "browser",
+    "web-extension",
+    "cli",
+    "generator"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TimFinnigan/create-web-extension/issues"
+  },
+  "homepage": "https://github.com/TimFinnigan/create-web-extension#readme",
+  "description": "A CLI tool to quickly scaffold Chrome extension projects with modern tooling",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^13.1.0",
+    "fs-extra": "^11.3.0",
+    "inquirer": "^8.2.5"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0"
+  }
+}
