@@ -219,8 +219,41 @@ async function createSourceFiles(projectPath, options) {
 ${manifestVersion === 3 ? '// Service worker for Manifest V3' : '// Background page for Manifest V2'}
 
 // Example: Listen for installation
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(function() {
   console.log('Extension installed');
+  
+  // Initialize storage with default values
+  chrome.storage.local.set({ 
+    count: 0,
+    settings: {
+      enabled: true,
+      theme: 'light',
+      refreshInterval: 60,
+      notifications: true
+    }
+  }, function() {
+    console.log('Storage initialized with default values');
+  });
+});
+
+// Example: Listen for messages from content scripts or popup
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  console.log('Message received:', message);
+  
+  if (message.type === 'GET_COUNT') {
+    chrome.storage.local.get(['count'], function(result) {
+      sendResponse({ count: result.count || 0 });
+    });
+    return true; // Required for async sendResponse
+  }
+  
+  if (message.type === 'POPUP_OPENED') {
+    sendResponse({ success: true, message: 'Background script received popup opened message' });
+  }
+  
+  if (message.type === 'CONTENT_LOADED') {
+    sendResponse({ success: true, message: 'Background script received content loaded message' });
+  }
 });
 `;
   
@@ -245,10 +278,24 @@ console.log('Content script loaded');
 // Example: Modify page content
 function modifyPage() {
   // Your code here
+  console.log('Content script is running on: ' + window.location.href);
+}
+
+// Example: Send a message to the background script
+function sendMessageToBackground() {
+  chrome.runtime.sendMessage({ 
+    type: 'CONTENT_LOADED', 
+    url: window.location.href 
+  }, function(response) {
+    console.log('Response from background:', response);
+  });
 }
 
 // Run when the page is fully loaded
-document.addEventListener('DOMContentLoaded', modifyPage);
+document.addEventListener('DOMContentLoaded', function() {
+  modifyPage();
+  sendMessageToBackground();
+});
 `;
   
   // Write to src directory (for webpack)
@@ -482,45 +529,64 @@ ReactDOM.render(<Options />, document.getElementById('options-root'));`;
     
     // For direct loading, we need to provide compiled JS versions
     const popupJs = `// Simple popup script for direct loading
-document.addEventListener('DOMContentLoaded', () => {
-  // Example: Get data from storage
-  chrome.storage.local.get(['count'], (result) => {
+document.addEventListener('DOMContentLoaded', function() {
+  // Get elements
+  const countElement = document.getElementById('count');
+  const incrementButton = document.getElementById('increment');
+  
+  // Initialize count from storage
+  chrome.storage.local.get(['count'], function(result) {
     const count = result.count || 0;
-    document.getElementById('count').textContent = count.toString();
+    countElement.textContent = count.toString();
   });
   
-  // Example: Handle button click
-  document.getElementById('increment').addEventListener('click', () => {
-    chrome.storage.local.get(['count'], (result) => {
-      const newCount = (result.count || 0) + 1;
-      chrome.storage.local.set({ count: newCount });
-      document.getElementById('count').textContent = newCount.toString();
+  // Add click event listener
+  incrementButton.addEventListener('click', function() {
+    // Get current count
+    chrome.storage.local.get(['count'], function(result) {
+      const currentCount = result.count || 0;
+      const newCount = currentCount + 1;
+      
+      // Update storage
+      chrome.storage.local.set({ count: newCount }, function() {
+        // Update display
+        countElement.textContent = newCount.toString();
+        console.log('Count updated to: ' + newCount);
+      });
     });
   });
 });`;
     
     const optionsJs = `// Simple options script for direct loading
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
+  // Get elements
+  const enabledCheckbox = document.getElementById('enabled');
+  const themeSelect = document.getElementById('theme');
+  const saveButton = document.getElementById('save');
+  const statusElement = document.getElementById('status');
+  
   // Load saved settings
-  chrome.storage.local.get(['settings'], (result) => {
+  chrome.storage.local.get(['settings'], function(result) {
     const settings = result.settings || { enabled: true, theme: 'light' };
     
-    document.getElementById('enabled').checked = settings.enabled;
-    document.getElementById('theme').value = settings.theme;
+    enabledCheckbox.checked = settings.enabled;
+    themeSelect.value = settings.theme;
   });
   
   // Save settings
-  document.getElementById('save').addEventListener('click', () => {
+  saveButton.addEventListener('click', function() {
     const settings = {
-      enabled: document.getElementById('enabled').checked,
-      theme: document.getElementById('theme').value
+      enabled: enabledCheckbox.checked,
+      theme: themeSelect.value
     };
     
-    chrome.storage.local.set({ settings }, () => {
-      const status = document.getElementById('status');
-      status.textContent = 'Settings saved!';
-      setTimeout(() => {
-        status.textContent = '';
+    chrome.storage.local.set({ settings: settings }, function() {
+      statusElement.textContent = 'Settings saved!';
+      statusElement.className = 'success';
+      
+      setTimeout(function() {
+        statusElement.textContent = '';
+        statusElement.className = '';
       }, 1500);
     });
   });
@@ -590,45 +656,64 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     // Vanilla JS/TS
     const popupJs = `// Popup script
-document.addEventListener('DOMContentLoaded', () => {
-  // Example: Get data from storage
-  chrome.storage.local.get(['count'], (result) => {
+document.addEventListener('DOMContentLoaded', function() {
+  // Get elements
+  const countElement = document.getElementById('count');
+  const incrementButton = document.getElementById('increment');
+  
+  // Initialize count from storage
+  chrome.storage.local.get(['count'], function(result) {
     const count = result.count || 0;
-    document.getElementById('count').textContent = count.toString();
+    countElement.textContent = count.toString();
   });
   
-  // Example: Handle button click
-  document.getElementById('increment').addEventListener('click', () => {
-    chrome.storage.local.get(['count'], (result) => {
-      const newCount = (result.count || 0) + 1;
-      chrome.storage.local.set({ count: newCount });
-      document.getElementById('count').textContent = newCount.toString();
+  // Add click event listener
+  incrementButton.addEventListener('click', function() {
+    // Get current count
+    chrome.storage.local.get(['count'], function(result) {
+      const currentCount = result.count || 0;
+      const newCount = currentCount + 1;
+      
+      // Update storage
+      chrome.storage.local.set({ count: newCount }, function() {
+        // Update display
+        countElement.textContent = newCount.toString();
+        console.log('Count updated to: ' + newCount);
+      });
     });
   });
 });`;
     
     const optionsJs = `// Options script
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
+  // Get elements
+  const enabledCheckbox = document.getElementById('enabled');
+  const themeSelect = document.getElementById('theme');
+  const saveButton = document.getElementById('save');
+  const statusElement = document.getElementById('status');
+  
   // Load saved settings
-  chrome.storage.local.get(['settings'], (result) => {
+  chrome.storage.local.get(['settings'], function(result) {
     const settings = result.settings || { enabled: true, theme: 'light' };
     
-    document.getElementById('enabled').checked = settings.enabled;
-    document.getElementById('theme').value = settings.theme;
+    enabledCheckbox.checked = settings.enabled;
+    themeSelect.value = settings.theme;
   });
   
   // Save settings
-  document.getElementById('save').addEventListener('click', () => {
+  saveButton.addEventListener('click', function() {
     const settings = {
-      enabled: document.getElementById('enabled').checked,
-      theme: document.getElementById('theme').value
+      enabled: enabledCheckbox.checked,
+      theme: themeSelect.value
     };
     
-    chrome.storage.local.set({ settings }, () => {
-      const status = document.getElementById('status');
-      status.textContent = 'Settings saved!';
-      setTimeout(() => {
-        status.textContent = '';
+    chrome.storage.local.set({ settings: settings }, function() {
+      statusElement.textContent = 'Settings saved!';
+      statusElement.className = 'success';
+      
+      setTimeout(function() {
+        statusElement.textContent = '';
+        statusElement.className = '';
       }, 1500);
     });
   });
@@ -1073,6 +1158,27 @@ npm run dev
 2. Enable "Developer mode" in the top right corner
 3. Click "Load unpacked" and select the \`dist\` directory from this project
 4. The extension should now be installed and visible in your browser
+
+## Troubleshooting
+
+### Counter Not Incrementing
+
+If the counter doesn't increment when clicking the button:
+
+1. **Check Permissions**: Make sure the extension has the "storage" permission in the manifest.json file.
+2. **Reload the Extension**: Try removing the extension and loading it again.
+3. **Check Console**: Open the extension popup, right-click and select "Inspect" to view the console for any errors.
+4. **Reset Storage**: You can reset the extension's storage by going to chrome://extensions, finding your extension, clicking "Details", then "Clear Data".
+5. **Verify Background Script**: The background script should initialize the counter on installation. Check if it's running properly.
+
+### Other Issues
+
+If you encounter other issues:
+
+1. **Check Chrome's Extension Errors**: Go to chrome://extensions and look for any error messages under your extension.
+2. **Inspect the Popup**: Right-click on the popup and select "Inspect" to access the DevTools for debugging.
+3. **Verify Manifest**: Make sure your manifest.json file is correctly formatted and has all required permissions.
+4. **Check Build Output**: If using the build process, check that the files in the dist directory are correct.
 
 ## Project Structure
 
