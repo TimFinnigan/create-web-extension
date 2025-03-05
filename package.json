@@ -1,7 +1,7 @@
 {
   "name": "create-web-extension",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/index.js",
   "bin": {
     "create-web-extension": "./bin/create-web-extension.js"
   },
@@ -9,7 +9,8 @@
     "start": "node ./bin/create-web-extension.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src/**/*.js",
-    "prepare": "chmod +x ./bin/create-web-extension.js"
+    "prepare": "chmod +x ./bin/create-web-extension.js",
+    "prepublishOnly": "npm run lint"
   },
   "repository": {
     "type": "git",
@@ -21,10 +22,16 @@
     "browser",
     "web-extension",
     "cli",
-    "generator"
+    "generator",
+    "boilerplate",
+    "scaffold",
+    "template",
+    "manifest",
+    "react",
+    "typescript"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Tim Finnigan",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/TimFinnigan/create-web-extension/issues"
   },
@@ -38,5 +45,14 @@
   },
   "devDependencies": {
     "eslint": "^8.56.0"
-  }
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "LICENSE",
+    "README.md"
+  ]
 }

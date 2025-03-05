@@ -10,6 +10,7 @@ A CLI tool to quickly scaffold Chrome extension projects with modern tooling.
 - Webpack bundling for modern development
 - Customizable permissions
 - Ready-to-use extension templates
+- Dual structure for both direct loading and development workflow
 
 ## Installation
 
@@ -50,6 +51,17 @@ create-web-extension my-extension --skip-prompts
 - `--react` - Include React for UI components
 - `--skip-prompts` - Skip all prompts and use default values
 
+## Generated Extension Features
+
+The generated extension includes:
+
+- **Dual Structure**: Can be loaded directly or built with webpack
+- **Popup UI**: A simple popup with a counter that persists in storage
+- **Options Page**: Configurable settings for your extension
+- **Background Script**: Handles events and manages state
+- **Content Script**: Interacts with web pages
+- **Modern Development**: Webpack, Babel, and optional TypeScript/React
+
 ## Project Structure
 
 The generated project will have the following structure:
@@ -64,6 +76,9 @@ my-extension/
 │   ├── options/        # Options page
 │   ├── popup/          # Popup UI
 │   └── manifest.json   # Extension manifest
+├── assets/             # Assets for direct loading
+├── scripts/            # Helper scripts
+├── manifest.json       # Manifest for direct loading
 ├── webpack.config.js   # Webpack configuration
 ├── package.json        # Project dependencies and scripts
 └── README.md           # Project documentation
@@ -97,15 +112,6 @@ After creating your extension:
    ```bash
    npm run build
    ```
-
-## Extension Features
-
-The generated extension includes:
-
-- **Popup UI**: A simple popup with a counter that persists in storage
-- **Options Page**: Configurable settings for your extension
-- **Background Script**: Handles events and manages state
-- **Content Script**: Interacts with web pages
 
 ## Local Development of this Tool
 
