@@ -1,16 +1,15 @@
 {
-  "name": "create-web-extension",
+  "name": "create-chrome-extension-boilerplate",
   "version": "1.0.0",
   "main": "src/index.js",
   "bin": {
-    "create-web-extension": "./bin/create-web-extension.js"
+    "create-chrome-extension-boilerplate": "./bin/create-chrome-extension-boilerplate.js"
   },
   "scripts": {
-    "start": "node ./bin/create-web-extension.js",
+    "start": "node ./bin/create-chrome-extension-boilerplate.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src/**/*.js",
-    "prepare": "chmod +x ./bin/create-web-extension.js",
-    "prepublishOnly": "npm run lint"
+    "prepare": "chmod +x ./bin/create-chrome-extension-boilerplate.js"
   },
   "repository": {
     "type": "git",

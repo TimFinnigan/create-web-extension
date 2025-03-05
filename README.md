@@ -1,4 +1,4 @@
-# Create Web Extension
+# Create Chrome Extension Boilerplate
 
 A CLI tool to quickly scaffold Chrome extension projects with modern tooling.
 
@@ -17,32 +17,32 @@ A CLI tool to quickly scaffold Chrome extension projects with modern tooling.
 ### Global Installation
 
 ```bash
-npm install -g create-web-extension
+npm install -g create-chrome-extension-boilerplate
 ```
 
 ### Using npx (without installing)
 
 ```bash
-npx create-web-extension my-extension
+npx create-chrome-extension-boilerplate my-extension
 ```
 
 ## Usage
 
 ```bash
 # Create a new extension with interactive prompts
-create-web-extension my-extension
+create-chrome-extension-boilerplate my-extension
 
 # Create a TypeScript extension
-create-web-extension my-extension --typescript
+create-chrome-extension-boilerplate my-extension --typescript
 
 # Create a React extension
-create-web-extension my-extension --react
+create-chrome-extension-boilerplate my-extension --react
 
 # Create a TypeScript + React extension
-create-web-extension my-extension --typescript --react
+create-chrome-extension-boilerplate my-extension --typescript --react
 
 # Skip all prompts and use defaults
-create-web-extension my-extension --skip-prompts
+create-chrome-extension-boilerplate my-extension --skip-prompts
 ```
 
 ## Options
@@ -119,8 +119,8 @@ If you want to develop or modify this tool:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/TimFinnigan/create-web-extension.git
-   cd create-web-extension
+   git clone https://github.com/TimFinnigan/create-chrome-extension-boilerplate.git
+   cd create-chrome-extension-boilerplate
    ```
 
 2. Install dependencies:
@@ -135,7 +135,7 @@ If you want to develop or modify this tool:
 
 4. Test the CLI:
    ```bash
-   create-web-extension test-extension
+   create-chrome-extension-boilerplate test-extension
    ```
 
 ## Contributing
