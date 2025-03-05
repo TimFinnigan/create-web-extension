@@ -65,11 +65,46 @@ async function createProjectStructure(projectPath, options) {
     'src/content',
     'src/assets',
     'src/assets/icons',
+    'scripts'
   ];
   
   for (const dir of directories) {
     await fs.ensureDir(path.join(projectPath, dir));
   }
+  
+  // Create setup instructions script
+  const setupInstructionsScript = `// Setup instructions script
+const path = require('path');
+
+// ANSI color codes for terminal output
+const colors = {
+  blue: '\\x1b[34m',
+  green: '\\x1b[32m',
+  yellow: '\\x1b[33m',
+  red: '\\x1b[31m',
+  reset: '\\x1b[0m',
+  bold: '\\x1b[1m'
+};
+
+// Get the absolute path to the dist directory
+const distPath = path.resolve(__dirname, '..', 'dist');
+
+console.log('\\n' + colors.green + colors.bold + '✅ Extension built successfully!' + colors.reset);
+console.log('\\n' + colors.blue + colors.bold + 'To load the extension in Chrome:' + colors.reset);
+console.log(colors.blue + '1. Open Chrome and navigate to ' + colors.bold + 'chrome://extensions' + colors.reset);
+console.log(colors.blue + '2. Enable ' + colors.bold + 'Developer mode' + colors.blue + ' in the top right corner' + colors.reset);
+console.log(colors.blue + '3. Click ' + colors.bold + 'Load unpacked' + colors.reset);
+console.log(colors.blue + '4. Select the ' + colors.bold + 'dist' + colors.blue + ' directory from this project:' + colors.reset);
+console.log(colors.yellow + colors.bold + '   ' + distPath + colors.reset);
+console.log('\\n' + colors.yellow + colors.bold + 'IMPORTANT:' + colors.yellow + ' Always select the dist directory, NOT the src directory!' + colors.reset);
+console.log(colors.yellow + 'The extension must be built before it can be loaded in Chrome.' + colors.reset);
+console.log('\\n' + colors.blue + 'For development:' + colors.reset);
+console.log(colors.blue + '- Run ' + colors.bold + 'npm run dev' + colors.blue + ' to start the development server with auto-reload' + colors.reset);
+console.log(colors.blue + '- After making changes, refresh the extension in Chrome to see the updates' + colors.reset);
+console.log('\\n' + colors.green + 'Happy coding! 🚀' + colors.reset + '\\n');
+`;
+
+  await fs.writeFile(path.join(projectPath, 'scripts', 'setup-instructions.js'), setupInstructionsScript);
 }
 
 /**
@@ -131,7 +166,42 @@ async function createManifestFile(projectPath, options) {
     }
   ];
   
+  // Write manifest to src directory (for webpack)
   await fs.writeJSON(path.join(projectPath, 'src', 'manifest.json'), manifest, { spaces: 2 });
+  
+  // Also write manifest to root directory (for direct loading)
+  await fs.writeJSON(path.join(projectPath, 'manifest.json'), manifest, { spaces: 2 });
+  
+  // Create a .gitignore file to avoid committing both manifest files
+  const gitignoreContent = `# Dependency directories
+node_modules/
+
+# Build output
+dist/
+
+# Avoid duplicate manifest files
+# The src/manifest.json is the source of truth
+/manifest.json
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+`;
+  
+  await fs.writeFile(path.join(projectPath, '.gitignore'), gitignoreContent);
 }
 
 /**
@@ -154,8 +224,15 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 `;
   
+  // Write to src directory (for webpack)
   await fs.writeFile(
     path.join(projectPath, 'src', 'background', `index.${extension}`),
+    backgroundScript
+  );
+  
+  // Also write compiled JS version to root directory (for direct loading)
+  await fs.writeFile(
+    path.join(projectPath, 'background.js'),
     backgroundScript
   );
   
@@ -174,8 +251,15 @@ function modifyPage() {
 document.addEventListener('DOMContentLoaded', modifyPage);
 `;
   
+  // Write to src directory (for webpack)
   await fs.writeFile(
     path.join(projectPath, 'src', 'content', `index.${extension}`),
+    contentScript
+  );
+  
+  // Also write compiled JS version to root directory (for direct loading)
+  await fs.writeFile(
+    path.join(projectPath, 'content.js'),
     contentScript
   );
   
@@ -187,6 +271,29 @@ document.addEventListener('DOMContentLoaded', modifyPage);
   
   // Create sample icons
   await createSampleIcons(projectPath);
+  
+  // Create a README note about the dual structure
+  const readmeNote = `# Important Note
+
+This extension has a dual structure:
+
+1. **Development Structure** (in the \`src/\` directory):
+   - Source files for development
+   - Used by webpack to build the extension
+
+2. **Direct Loading Structure** (in the root directory):
+   - Basic files for direct loading in Chrome
+   - Allows loading the extension without building
+
+For the best development experience, we recommend:
+1. Install dependencies: \`npm install\`
+2. Build the extension: \`npm run build\`
+3. Load the \`dist/\` directory in Chrome
+
+However, you can also directly load the extension from the root directory for quick testing.
+`;
+
+  await fs.writeFile(path.join(projectPath, 'STRUCTURE.md'), readmeNote);
 }
 
 /**
@@ -227,8 +334,13 @@ async function createHtmlFiles(projectPath, options) {
 </body>
 </html>`;
   
+  // Write to src directory (for webpack)
   await fs.writeFile(path.join(projectPath, 'src', 'popup', 'index.html'), popupHtml);
   await fs.writeFile(path.join(projectPath, 'src', 'options', 'index.html'), optionsHtml);
+  
+  // Also write to root directory (for direct loading)
+  await fs.writeFile(path.join(projectPath, 'popup.html'), popupHtml);
+  await fs.writeFile(path.join(projectPath, 'options.html'), optionsHtml);
 }
 
 /**
@@ -263,8 +375,13 @@ h1 {
   color: #4285f4;
 }`;
   
+  // Write CSS to src directory (for webpack)
   await fs.writeFile(path.join(projectPath, 'src', 'popup', 'index.css'), popupCss);
   await fs.writeFile(path.join(projectPath, 'src', 'options', 'index.css'), optionsCss);
+  
+  // Also write CSS to root directory (for direct loading)
+  await fs.writeFile(path.join(projectPath, 'popup.css'), popupCss);
+  await fs.writeFile(path.join(projectPath, 'options.css'), optionsCss);
   
   // JS/TS files
   if (react) {
@@ -359,8 +476,117 @@ const Options = () => {
 
 ReactDOM.render(<Options />, document.getElementById('options-root'));`;
     
+    // Write React files to src directory (for webpack)
     await fs.writeFile(path.join(projectPath, 'src', 'popup', `index.${jsxExtension}`), popupReact);
     await fs.writeFile(path.join(projectPath, 'src', 'options', `index.${jsxExtension}`), optionsReact);
+    
+    // For direct loading, we need to provide compiled JS versions
+    const popupJs = `// Simple popup script for direct loading
+document.addEventListener('DOMContentLoaded', () => {
+  // Example: Get data from storage
+  chrome.storage.local.get(['count'], (result) => {
+    const count = result.count || 0;
+    document.getElementById('count').textContent = count.toString();
+  });
+  
+  // Example: Handle button click
+  document.getElementById('increment').addEventListener('click', () => {
+    chrome.storage.local.get(['count'], (result) => {
+      const newCount = (result.count || 0) + 1;
+      chrome.storage.local.set({ count: newCount });
+      document.getElementById('count').textContent = newCount.toString();
+    });
+  });
+});`;
+    
+    const optionsJs = `// Simple options script for direct loading
+document.addEventListener('DOMContentLoaded', () => {
+  // Load saved settings
+  chrome.storage.local.get(['settings'], (result) => {
+    const settings = result.settings || { enabled: true, theme: 'light' };
+    
+    document.getElementById('enabled').checked = settings.enabled;
+    document.getElementById('theme').value = settings.theme;
+  });
+  
+  // Save settings
+  document.getElementById('save').addEventListener('click', () => {
+    const settings = {
+      enabled: document.getElementById('enabled').checked,
+      theme: document.getElementById('theme').value
+    };
+    
+    chrome.storage.local.set({ settings }, () => {
+      const status = document.getElementById('status');
+      status.textContent = 'Settings saved!';
+      setTimeout(() => {
+        status.textContent = '';
+      }, 1500);
+    });
+  });
+});`;
+    
+    // Write compiled JS to root directory (for direct loading)
+    await fs.writeFile(path.join(projectPath, 'popup.js'), popupJs);
+    await fs.writeFile(path.join(projectPath, 'options.js'), optionsJs);
+    
+    // Update HTML files for direct loading
+    const directPopupHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extension Popup</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="popup-root">
+    <h1>My Extension</h1>
+    <p>You clicked <span id="count">0</span> times</p>
+    <button id="increment">Click me</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>`;
+    
+    const directOptionsHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extension Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div id="options-root">
+    <h1>Extension Options</h1>
+    
+    <div class="option">
+      <label>
+        <input type="checkbox" id="enabled">
+        Enable extension
+      </label>
+    </div>
+    
+    <div class="option">
+      <label>Theme:</label>
+      <select id="theme">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
+    
+    <button id="save">Save Settings</button>
+    <div id="status"></div>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>`;
+    
+    // Update HTML files for direct loading
+    await fs.writeFile(path.join(projectPath, 'popup.html'), directPopupHtml);
+    await fs.writeFile(path.join(projectPath, 'options.html'), directOptionsHtml);
+    
   } else {
     // Vanilla JS/TS
     const popupJs = `// Popup script
@@ -461,10 +687,72 @@ document.addEventListener('DOMContentLoaded', () => {
 </body>
 </html>`;
     
+    // Write to src directory (for webpack)
     await fs.writeFile(path.join(projectPath, 'src', 'popup', 'index.html'), updatedPopupHtml);
     await fs.writeFile(path.join(projectPath, 'src', 'options', 'index.html'), updatedOptionsHtml);
     await fs.writeFile(path.join(projectPath, 'src', 'popup', `index.${extension}`), popupJs);
     await fs.writeFile(path.join(projectPath, 'src', 'options', `index.${extension}`), optionsJs);
+    
+    // Also write to root directory (for direct loading)
+    await fs.writeFile(path.join(projectPath, 'popup.js'), popupJs);
+    await fs.writeFile(path.join(projectPath, 'options.js'), optionsJs);
+    
+    // Update HTML files for direct loading
+    const directPopupHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extension Popup</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="popup-root">
+    <h1>My Extension</h1>
+    <p>You clicked <span id="count">0</span> times</p>
+    <button id="increment">Click me</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>`;
+    
+    const directOptionsHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extension Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div id="options-root">
+    <h1>Extension Options</h1>
+    
+    <div class="option">
+      <label>
+        <input type="checkbox" id="enabled">
+        Enable extension
+      </label>
+    </div>
+    
+    <div class="option">
+      <label>Theme:</label>
+      <select id="theme">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
+    
+    <button id="save">Save Settings</button>
+    <div id="status"></div>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>`;
+    
+    // Update HTML files for direct loading
+    await fs.writeFile(path.join(projectPath, 'popup.html'), directPopupHtml);
+    await fs.writeFile(path.join(projectPath, 'options.html'), directOptionsHtml);
   }
 }
 
@@ -477,10 +765,43 @@ async function createSampleIcons(projectPath) {
   
   const iconSizes = [16, 48, 128];
   
+  // Create assets directories in root for direct loading
+  await fs.ensureDir(path.join(projectPath, 'assets'));
+  await fs.ensureDir(path.join(projectPath, 'assets', 'icons'));
+  
   for (const size of iconSizes) {
+    const iconContent = `This is a placeholder for a ${size}x${size} icon.`;
+    
+    // Write to src directory (for webpack)
     await fs.writeFile(
       path.join(projectPath, 'src', 'assets', 'icons', `icon${size}.png`),
-      `This is a placeholder for a ${size}x${size} icon.`
+      iconContent
+    );
+    
+    // Also write to root assets directory (for direct loading)
+    await fs.writeFile(
+      path.join(projectPath, 'assets', 'icons', `icon${size}.png`),
+      iconContent
+    );
+  }
+  
+  // Create a simple SVG icon that can be used directly
+  const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="20" fill="#4285f4"/>
+  <path d="M64 30 L98 80 L30 80 Z" fill="white"/>
+  <circle cx="64" cy="60" r="10" fill="white"/>
+</svg>`;
+
+  // Write SVG icons
+  for (const size of iconSizes) {
+    await fs.writeFile(
+      path.join(projectPath, 'src', 'assets', 'icons', `icon${size}.svg`),
+      svgIcon
+    );
+    
+    await fs.writeFile(
+      path.join(projectPath, 'assets', 'icons', `icon${size}.svg`),
+      svgIcon
     );
   }
 }
@@ -498,8 +819,10 @@ async function createPackageJson(projectPath, options) {
     version: "1.0.0",
     description: "A Chrome extension created with create-web-extension",
     scripts: {
+      "clean": "rimraf dist",
       "dev": "webpack --mode=development --watch",
-      "build": "webpack --mode=production",
+      "build": "npm run clean && webpack --mode=production",
+      "setup": "npm install && npm run build && node scripts/setup-instructions.js",
       "lint": "eslint src/**/*.js",
       "test": "echo \"Error: no test specified\" && exit 1"
     },
@@ -514,6 +837,7 @@ async function createPackageJson(projectPath, options) {
       "css-loader": "^6.8.1",
       "eslint": "^8.42.0",
       "html-webpack-plugin": "^5.5.3",
+      "rimraf": "^5.0.1",
       "style-loader": "^3.3.3",
       "webpack": "^5.86.0",
       "webpack-cli": "^5.1.4"
@@ -566,6 +890,10 @@ async function createWebpackConfig(projectPath, options) {
   const webpackConfig = `const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+// This webpack configuration builds the extension into the dist/ directory.
+// You MUST run 'npm run build' or 'npm run dev' before loading the extension in Chrome.
+// When loading the extension in Chrome, select the dist/ directory, NOT the src/ directory.
 
 module.exports = {
   entry: {
@@ -672,6 +1000,35 @@ A Chrome extension created with create-web-extension.
 - Manifest V${manifestVersion}
 - Webpack for bundling
 
+## Extension Structure
+
+This extension has a dual structure:
+
+1. **Development Structure** (in the \`src/\` directory):
+   - Source files for development
+   - Used by webpack to build the extension
+
+2. **Direct Loading Structure** (in the root directory):
+   - Basic files for direct loading in Chrome
+   - Allows loading the extension without building
+
+You can choose either approach:
+
+### Option 1: Direct Loading (Quick Start)
+
+You can immediately load the extension in Chrome without any build step:
+
+1. Open Chrome and navigate to \`chrome://extensions\`
+2. Enable "Developer mode" in the top right corner
+3. Click "Load unpacked" and select **this directory** (the root of the project)
+4. The extension should now be installed and visible in your browser
+
+This is useful for quick testing, but doesn't include any advanced features that require building.
+
+### Option 2: Development Workflow (Recommended)
+
+For the full development experience with all features:
+
 ## Development
 
 ### Prerequisites
@@ -679,28 +1036,38 @@ A Chrome extension created with create-web-extension.
 - Node.js (v14 or higher)
 - npm or yarn
 
-### Installation
+### Quick Start
+
+\`\`\`bash
+# Install dependencies, build the extension, and show loading instructions
+npm run setup
+\`\`\`
+
+### Manual Installation
 
 \`\`\`bash
 # Install dependencies
 npm install
 \`\`\`
 
-### Development Build
+### Build the Extension
+
+\`\`\`bash
+# Create a production build (REQUIRED before loading in Chrome)
+npm run build
+\`\`\`
+
+### Development Mode
 
 \`\`\`bash
 # Start development build with watch mode
 npm run dev
 \`\`\`
 
-### Production Build
+> **IMPORTANT**: You must run \`npm run build\` at least once before loading the extension in Chrome.
+> The \`npm run dev\` command will watch for changes and rebuild automatically, but you'll need to refresh the extension in Chrome to see the changes.
 
-\`\`\`bash
-# Create production build
-npm run build
-\`\`\`
-
-## Loading the Extension in Chrome
+## Loading the Built Extension in Chrome
 
 1. Open Chrome and navigate to \`chrome://extensions\`
 2. Enable "Developer mode" in the top right corner
@@ -718,6 +1085,9 @@ npm run build
 │   ├── options/        # Options page
 │   ├── popup/          # Popup UI
 │   └── manifest.json   # Extension manifest
+├── assets/             # Assets for direct loading
+├── scripts/            # Helper scripts
+├── manifest.json       # Manifest for direct loading
 ├── webpack.config.js   # Webpack configuration
 ├── package.json        # Project dependencies and scripts
 ${typescript ? '├── tsconfig.json      # TypeScript configuration\n' : ''}└── README.md          # This file

@@ -36,15 +36,32 @@ program
       await createExtension(targetDir, options);
       
       console.log(chalk.green('\n✅ Extension created successfully!'));
+      console.log(chalk.blue('\nYour extension has a dual structure:'));
+      console.log(chalk.blue('1. Files in the root directory for direct loading in Chrome'));
+      console.log(chalk.blue('2. Source files in src/ directory for development with webpack'));
+      
+      console.log(chalk.yellow('\nOption 1: Direct Loading (Quick Start)'));
+      console.log(chalk.yellow('You can immediately load the extension without building:'));
+      console.log(chalk.yellow('1. Open Chrome and navigate to chrome://extensions'));
+      console.log(chalk.yellow('2. Enable "Developer mode" in the top right corner'));
+      console.log(chalk.yellow('3. Click "Load unpacked"'));
+      console.log(chalk.bold.yellow(`4. Select the "${targetDir}" directory (the root folder)`));
+      
+      console.log(chalk.green('\nOption 2: Development Workflow (Recommended)'));
       console.log(chalk.blue('\nNext steps:'));
       console.log(chalk.blue(`  cd ${targetDir}`));
+      console.log(chalk.bold.blue('  npm run setup')); // Quick setup script
+      console.log(chalk.blue('\nOr manually:'));
       console.log(chalk.blue('  npm install'));
-      console.log(chalk.blue('  npm run dev'));
-      console.log(chalk.blue('\nTo load the extension in Chrome:'));
+      console.log(chalk.bold.blue('  npm run build')); // Build the extension
+      console.log(chalk.blue('  npm run dev')); // For development with watch mode
+      console.log(chalk.blue('\nThen load the extension in Chrome:'));
       console.log(chalk.blue('  1. Open chrome://extensions'));
-      console.log(chalk.blue('  2. Enable Developer Mode'));
-      console.log(chalk.blue('  3. Click "Load unpacked"'));
-      console.log(chalk.blue(`  4. Select the "${targetDir}/dist" folder`));
+      console.log(chalk.blue('  2. Enable "Developer mode" in the top right corner'));
+      console.log(chalk.bold.blue('  3. Click "Load unpacked"'));
+      console.log(chalk.bold.blue(`  4. Select the "${targetDir}/dist" folder`));
+      
+      console.log(chalk.blue('\nSee README.md for more details.'));
     } catch (error) {
       console.error(chalk.red('\n❌ Error creating extension:'), error);
       process.exit(1);
